@@ -1,9 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { SignedIn, SignedOut, UserButton, SignInButton } from '@clerk/nextjs'
-import { useUser } from '@clerk/nextjs'
 import { useRouter } from 'next/navigation'
+import { usePlayerId } from '@/lib/hooks/usePlayerId'
 import { Panel } from '@/components/tui/Panel'
 import { MapView } from '@/components/tui/MapView'
 import { CabinetPanel } from '@/components/tui/CabinetPanel'
@@ -46,29 +45,6 @@ export default function HomePage() {
         </pre>
       </div>
 
-      {/* Auth bar */}
-      <div className="flex items-center justify-end mb-4 px-2 py-1 border border-terminal-border text-xs">
-        <SignedIn>
-          <div className="flex items-center gap-3">
-            <span className="text-terminal-green">Online</span>
-            <UserButton
-              appearance={{
-                elements: {
-                  avatarBox: 'w-6 h-6',
-                },
-              }}
-            />
-          </div>
-        </SignedIn>
-        <SignedOut>
-          <SignInButton mode="modal">
-            <button className="text-terminal-cyan hover:text-terminal-foreground">
-              [Sign In] to play multiplayer
-            </button>
-          </SignInButton>
-        </SignedOut>
-      </div>
-
       {view === 'lobby' && (
         <LobbyView
           onDemo={() => setView('demo')}
@@ -84,7 +60,7 @@ export default function HomePage() {
 }
 
 function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => void }) {
-  const { user } = useUser()
+  const { playerId } = usePlayerId()
   const router = useRouter()
 
   return (
@@ -97,29 +73,20 @@ function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => v
           >
             {boxChars.play} Play Demo (vs 3 AI Nations)
           </button>
-          <SignedIn>
-            <button
-              onClick={onCreate}
-              className="block w-full text-left px-4 py-2 text-terminal-cyan hover:bg-terminal-bright-black transition-colors font-bold"
-            >
-              {boxChars.play} Create Multiplayer Game
-            </button>
-          </SignedIn>
-          <SignedOut>
-            <div className="px-4 py-2 text-terminal-bright-black text-sm">
-              Sign in to create or join multiplayer games
-            </div>
-          </SignedOut>
+          <button
+            onClick={onCreate}
+            className="block w-full text-left px-4 py-2 text-terminal-cyan hover:bg-terminal-bright-black transition-colors font-bold"
+          >
+            {boxChars.play} Create Multiplayer Game
+          </button>
         </div>
       </Panel>
 
-      <SignedIn>
-        <GameList
-          userId={user?.id || null}
-          onJoin={(gameId) => router.push(`/game/${gameId}?join=true`)}
-          onResume={(gameId) => router.push(`/game/${gameId}`)}
-        />
-      </SignedIn>
+      <GameList
+        userId={playerId}
+        onJoin={(gameId) => router.push(`/game/${gameId}?join=true`)}
+        onResume={(gameId) => router.push(`/game/${gameId}`)}
+      />
 
       <Panel title="HOW IT WORKS">
         <div className="text-xs space-y-2 text-terminal-bright-black">
@@ -153,6 +120,7 @@ function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => v
 }
 
 function CreateGameView({ onBack }: { onBack: () => void }) {
+  const { playerId } = usePlayerId()
   const router = useRouter()
   const [name, setName] = useState('')
   const [playerName, setPlayerName] = useState('')
@@ -176,7 +144,7 @@ function CreateGameView({ onBack }: { onBack: () => void }) {
     try {
       const res = await fetch('/api/games', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-player-id': playerId! },
         body: JSON.stringify({
           name: name.trim(),
           playerName: playerName.trim(),

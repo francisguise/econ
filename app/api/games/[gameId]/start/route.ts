@@ -1,14 +1,13 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { createServiceClient } from '@/lib/supabase/server'
 
 export async function POST(
-  _request: Request,
+  request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const { userId } = await auth()
+  const userId = request.headers.get('x-player-id')
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Missing player ID' }, { status: 401 })
   }
 
   const supabase = createServiceClient()

@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useUser } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { usePlayerId } from '@/lib/hooks/usePlayerId'
 import { useMultiplayerGame } from '@/lib/hooks/useMultiplayerGame'
 import { useMultiplayerStore } from '@/lib/store/multiplayerStore'
 import { useKeyboard } from '@/lib/hooks/useKeyboard'
@@ -24,20 +24,14 @@ import { DEFAULT_PLAYER_RESOURCES, AVAILABLE_PLAYER_EMOJIS } from '@/lib/types/g
 import { boxChars } from '@/lib/assets/box-chars'
 
 export default function GamePage({ params }: { params: { gameId: string } }) {
-  const { user, isLoaded } = useUser()
-  const router = useRouter()
+  const { playerId, isLoaded } = usePlayerId()
   const searchParams = useSearchParams()
 
-  if (!isLoaded) {
-    return <LoadingScreen message="Authenticating..." />
+  if (!isLoaded || !playerId) {
+    return <LoadingScreen message="Loading..." />
   }
 
-  if (!user) {
-    router.push('/sign-in')
-    return <LoadingScreen message="Redirecting to sign in..." />
-  }
-
-  return <GameContent gameId={params.gameId} userId={user.id} showJoin={searchParams.get('join') === 'true'} />
+  return <GameContent gameId={params.gameId} userId={playerId} showJoin={searchParams.get('join') === 'true'} />
 }
 
 function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: string; showJoin: boolean }) {
@@ -83,6 +77,7 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
       <JoinGameForm
         gameId={gameId}
         gameName={game.name}
+        playerId={userId}
         onJoined={() => { setShowJoinForm(false); refetch() }}
         onCancel={() => router.push('/')}
       />
@@ -156,11 +151,13 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
 function JoinGameForm({
   gameId,
   gameName,
+  playerId,
   onJoined,
   onCancel,
 }: {
   gameId: string
   gameName: string
+  playerId: string
   onJoined: () => void
   onCancel: () => void
 }) {
@@ -181,7 +178,7 @@ function JoinGameForm({
     try {
       const res = await fetch(`/api/games/${gameId}/join`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-player-id': playerId },
         body: JSON.stringify({ playerName: playerName.trim(), playerEmoji }),
       })
 

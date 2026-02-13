@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server'
-import { auth } from '@clerk/nextjs/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { DEFAULT_PLAYER_RESOURCES } from '@/lib/types/game'
 
@@ -7,9 +6,9 @@ export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const { userId } = await auth()
+  const userId = request.headers.get('x-player-id')
   if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    return NextResponse.json({ error: 'Missing player ID' }, { status: 401 })
   }
 
   const { playerName, playerEmoji = '🎯' } = await request.json()

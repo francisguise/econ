@@ -170,7 +170,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     try {
       const res = await fetch(`/api/games/${gameId}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'x-player-id': userId },
         body: JSON.stringify({ policies: store.policies }),
       })
 
@@ -194,6 +194,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     try {
       const res = await fetch(`/api/games/${gameId}/start`, {
         method: 'POST',
+        headers: { 'x-player-id': userId },
       })
 
       if (!res.ok) {
