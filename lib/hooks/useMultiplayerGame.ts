@@ -183,7 +183,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
       store.setHasSubmitted(true)
       store.addNotification('mage', 'Policies submitted successfully!', 'success')
       return true
-    } catch (err) {
+    } catch {
       store.addNotification('mage', 'Network error submitting policies', 'error')
       return false
     }

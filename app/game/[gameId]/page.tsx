@@ -66,7 +66,7 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
     return () => { store.reset() }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  const { game, players, currentQuarter } = store
+  const { game, players } = store
   const localPlayer = store.getLocalPlayer()
   const playerRank = store.getPlayerRank()
   const isCreator = store.isCreator()
