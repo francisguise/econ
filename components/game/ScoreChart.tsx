@@ -40,7 +40,7 @@ export function ScoreChart({ players, snapshots }: ScoreChartProps) {
     if (!quarterMap.has(qId)) {
       quarterMap.set(qId, {})
     }
-    const metrics = snap.metrics as Record<string, number>
+    const metrics = snap.metrics as unknown as Record<string, number>
     quarterMap.get(qId)![snap.playerId] = metrics.score || 0
   }
 

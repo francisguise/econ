@@ -24,7 +24,7 @@ export function EconomicsChart({ localUserId, snapshots }: EconomicsChartProps) 
   }
 
   const chartData = playerSnapshots.map((snap, idx) => {
-    const m = snap.metrics as Record<string, number>
+    const m = snap.metrics as unknown as Record<string, number>
     return {
       quarter: `Q${idx + 1}`,
       'GDP ($T)': Number((m.gdp / 1e12).toFixed(3)),
