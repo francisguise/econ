@@ -63,7 +63,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
   const loadInitialData = useCallback(async () => {
     const store = useMultiplayerStore.getState()
     try {
-      const res = await fetch(`/api/games/${gameId}`)
+      const res = await fetch(`/api/games/${gameId}`, { cache: 'no-store' })
       if (!res.ok) return
 
       const data = await res.json()
