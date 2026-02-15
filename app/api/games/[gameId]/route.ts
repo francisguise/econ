@@ -9,27 +9,19 @@ export async function GET(
 ) {
   const supabase = createServiceClient()
 
-  // Fetch game with players
-  const { data: game, error: gameError } = await supabase
+  // Fetch game with players in a single joined query (matches game list pattern)
+  const { data: gameWithPlayers, error: gameError } = await supabase
     .from('games')
-    .select('*')
+    .select('*, game_players(*)')
     .eq('id', params.gameId)
     .single()
 
-  if (gameError || !game) {
+  if (gameError || !gameWithPlayers) {
     return NextResponse.json({ error: 'Game not found' }, { status: 404 })
   }
 
-  // Fetch players
-  const { data: players, error: playersError } = await supabase
-    .from('game_players')
-    .select('*')
-    .eq('game_id', params.gameId)
-    .order('player_score', { ascending: false })
-
-  if (playersError) {
-    console.error('Error fetching players:', playersError)
-  }
+  // Separate game and players from the joined result
+  const { game_players: players, ...game } = gameWithPlayers
 
   // Fetch current quarter
   const { data: currentQuarter } = await supabase
@@ -59,7 +51,7 @@ export async function GET(
 
   return NextResponse.json({
     game,
-    players: players || [],
+    players: (players || []).sort((a: { player_score: number }, b: { player_score: number }) => b.player_score - a.player_score),
     playerCount: (players || []).length,
     currentQuarter,
     submissions: submissions || [],
