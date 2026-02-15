@@ -100,6 +100,18 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     loadInitialData()
   }, [loadInitialData])
 
+  // Poll as fallback for real-time (every 3s while waiting, 5s while active)
+  const gameStatus = useMultiplayerStore(state => state.game?.status)
+  useEffect(() => {
+    if (gameStatus !== 'waiting' && gameStatus !== 'active') return
+
+    const interval = setInterval(() => {
+      loadInitialDataRef.current()
+    }, gameStatus === 'waiting' ? 3000 : 5000)
+
+    return () => clearInterval(interval)
+  }, [gameStatus])
+
   // Real-time subscriptions
   useEffect(() => {
     const channel = supabase
