@@ -35,7 +35,11 @@ export default function GamePage({ params }: { params: { gameId: string } }) {
 }
 
 function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: string; showJoin: boolean }) {
-  const store = useMultiplayerStore()
+  // Use individual selectors for reliable re-renders in Zustand v5
+  const game = useMultiplayerStore(s => s.game)
+  const players = useMultiplayerStore(s => s.players)
+  const snapshots = useMultiplayerStore(s => s.snapshots)
+
   const { submitPolicies, startGame, refetch } = useMultiplayerGame(gameId, userId)
   const router = useRouter()
 
@@ -52,19 +56,25 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
     'a': () => setActiveTab('cabinet'),
     'p': () => setActiveTab('policy'),
     'c': () => setActiveTab('charts'),
-    ' ': () => { if (!store.hasSubmitted && store.game?.status === 'active') submitPolicies() },
+    ' ': () => {
+      const s = useMultiplayerStore.getState()
+      if (!s.hasSubmitted && s.game?.status === 'active') submitPolicies()
+    },
   })
 
   // Clean up store on unmount
   useEffect(() => {
-    return () => { store.reset() }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+    return () => { useMultiplayerStore.getState().reset() }
+  }, [])
 
-  const { game, players } = store
-  const localPlayer = store.getLocalPlayer()
-  const playerRank = store.getPlayerRank()
-  const isCreator = store.isCreator()
+  // Derive local player info from reactive selectors
+  const localPlayer = players.find(p => p.userId === userId)
+  const isCreator = game?.createdBy === userId
   const isInGame = !!localPlayer
+  const playerRank = (() => {
+    const sorted = [...players].sort((a, b) => b.playerScore - a.playerScore)
+    return sorted.findIndex(p => p.userId === userId) + 1
+  })()
 
   // Loading state
   if (!game) {
@@ -125,7 +135,7 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
         game={game}
         players={players}
         localUserId={userId}
-        snapshots={store.snapshots}
+        snapshots={snapshots}
         onBack={() => router.push('/')}
       />
     )
@@ -134,7 +144,6 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
   // Active game
   return (
     <ActiveGame
-      store={store}
       localPlayer={localPlayer!}
       playerRank={playerRank}
       selectedMinister={selectedMinister}
@@ -341,7 +350,6 @@ function WaitingRoom({
 
 // ─── Active Game ─────────────────────────────────────────
 function ActiveGame({
-  store,
   localPlayer,
   playerRank,
   selectedMinister,
@@ -351,7 +359,6 @@ function ActiveGame({
   onSubmit,
   onBack,
 }: {
-  store: ReturnType<typeof useMultiplayerStore.getState>
   localPlayer: NonNullable<ReturnType<ReturnType<typeof useMultiplayerStore.getState>['getLocalPlayer']>>
   playerRank: number
   selectedMinister: MinisterRole
@@ -361,7 +368,16 @@ function ActiveGame({
   onSubmit: () => void
   onBack: () => void
 }) {
-  const { game, players, currentQuarter, policies, hasSubmitted, notifications, logEntries, submittedPlayers, cabinet, snapshots } = store
+  const game = useMultiplayerStore(s => s.game)
+  const players = useMultiplayerStore(s => s.players)
+  const currentQuarter = useMultiplayerStore(s => s.currentQuarter)
+  const policies = useMultiplayerStore(s => s.policies)
+  const hasSubmitted = useMultiplayerStore(s => s.hasSubmitted)
+  const notifications = useMultiplayerStore(s => s.notifications)
+  const logEntries = useMultiplayerStore(s => s.logEntries)
+  const submittedPlayers = useMultiplayerStore(s => s.submittedPlayers)
+  const cabinet = useMultiplayerStore(s => s.cabinet)
+  const snapshots = useMultiplayerStore(s => s.snapshots)
 
   if (!game) return null
 
@@ -401,7 +417,7 @@ function ActiveGame({
                 minister={n.minister}
                 message={n.message}
                 type={n.type}
-                onDismiss={() => store.dismissNotification(n.id)}
+                onDismiss={() => useMultiplayerStore.getState().dismissNotification(n.id)}
               />
             ))}
           </div>
@@ -410,12 +426,12 @@ function ActiveGame({
           {activeTab === 'cabinet' ? (
             <MinisterActionPanel
               assignment={policies.cabinetAssignment}
-              onAssignmentChange={(a) => store.setPolicies({ ...policies, cabinetAssignment: a })}
+              onAssignmentChange={(a) => useMultiplayerStore.getState().setPolicies({ ...policies, cabinetAssignment: a })}
               onSubmit={onSubmit}
               quarterNumber={game.currentQuarter}
             />
           ) : activeTab === 'policy' ? (
-            <PolicyPanel policies={policies} onChange={store.setPolicies} />
+            <PolicyPanel policies={policies} onChange={useMultiplayerStore.getState().setPolicies} />
           ) : (
             <div className="space-y-2">
               <ScoreChart players={players} snapshots={snapshots} />
@@ -451,7 +467,7 @@ function ActiveGame({
 
           <StatsPanel
             resources={localPlayer.playerResources || DEFAULT_PLAYER_RESOURCES}
-            previousResources={store.previousResources || undefined}
+            previousResources={useMultiplayerStore.getState().previousResources || undefined}
             score={localPlayer.playerScore}
             rank={playerRank}
             totalPlayers={players.length}
