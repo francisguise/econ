@@ -46,6 +46,7 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
   const [selectedMinister, setSelectedMinister] = useState<MinisterRole>('warrior')
   const [activeTab, setActiveTab] = useState<'cabinet' | 'policy' | 'charts'>('cabinet')
   const [showJoinForm, setShowJoinForm] = useState(showJoin)
+  const [joinedSuccessfully, setJoinedSuccessfully] = useState(false)
 
   // Keyboard shortcuts
   useKeyboard({
@@ -82,13 +83,13 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
   }
 
   // Join form
-  if (showJoinForm && !isInGame && game.status === 'waiting') {
+  if (showJoinForm && !isInGame && !joinedSuccessfully && game.status === 'waiting') {
     return (
       <JoinGameForm
         gameId={gameId}
         gameName={game.name}
         playerId={userId}
-        onJoined={() => { setShowJoinForm(false); refetch() }}
+        onJoined={() => { setShowJoinForm(false); setJoinedSuccessfully(true); router.replace(`/game/${gameId}`); refetch() }}
         onCancel={() => router.push('/')}
       />
     )
@@ -120,7 +121,7 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
         game={game}
         players={players}
         isCreator={isCreator}
-        isInGame={isInGame}
+        isInGame={isInGame || joinedSuccessfully}
         onStart={startGame}
         onBack={() => router.push('/')}
         onJoin={() => setShowJoinForm(true)}
@@ -193,6 +194,11 @@ function JoinGameForm({
 
       if (!res.ok) {
         const data = await res.json()
+        // "Already joined" means we're in — treat as success
+        if (data.error === 'Already joined this game') {
+          onJoined()
+          return
+        }
         throw new Error(data.error || 'Failed to join')
       }
 
