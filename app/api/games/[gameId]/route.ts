@@ -21,11 +21,15 @@ export async function GET(
   }
 
   // Fetch players
-  const { data: players } = await supabase
+  const { data: players, error: playersError } = await supabase
     .from('game_players')
     .select('*')
     .eq('game_id', params.gameId)
     .order('player_score', { ascending: false })
+
+  if (playersError) {
+    console.error('Error fetching players:', playersError)
+  }
 
   // Fetch current quarter
   const { data: currentQuarter } = await supabase
@@ -56,6 +60,7 @@ export async function GET(
   return NextResponse.json({
     game,
     players: players || [],
+    playerCount: (players || []).length,
     currentQuarter,
     submissions: submissions || [],
     snapshots: snapshots || [],
