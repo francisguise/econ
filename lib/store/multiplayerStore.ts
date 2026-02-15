@@ -62,6 +62,15 @@ interface MultiplayerStore {
   // Cabinet
   cabinet: Cabinet
 
+  // Batch setter for atomic updates (prevents intermediate renders)
+  setGameData: (data: {
+    game: Game
+    players: GamePlayer[]
+    currentQuarter: Quarter | null
+    submittedPlayerIds: string[]
+    snapshots: QuarterSnapshot[]
+  }) => void
+
   // Setters
   setGame: (game: Game) => void
   setPlayers: (players: GamePlayer[]) => void
@@ -110,6 +119,29 @@ export const useMultiplayerStore = create<MultiplayerStore>((set, get) => ({
       engineer: { role: 'engineer', emoji: '🔧', name: 'Chief Engineer', title: 'Development', level: 1, experience: 0 },
       diplomat: { role: 'diplomat', emoji: '🤝', name: 'Ambassador', title: 'Foreign Affairs', level: 1, experience: 0 },
     },
+  },
+
+  setGameData: ({ game, players, currentQuarter, submittedPlayerIds, snapshots }) => {
+    const prev = get().currentQuarter
+    const userId = get().localUserId
+    const update: Partial<MultiplayerStore> = { game, players, snapshots }
+
+    // Handle quarter change
+    if (currentQuarter && prev && currentQuarter.id !== prev.id) {
+      const localPlayer = players.find(p => p.userId === userId)
+      Object.assign(update, {
+        currentQuarter,
+        hasSubmitted: false,
+        submittedPlayers: [],
+        previousResources: localPlayer?.playerResources || null,
+      })
+    } else {
+      update.currentQuarter = currentQuarter
+      update.submittedPlayers = submittedPlayerIds
+      update.hasSubmitted = userId ? submittedPlayerIds.includes(userId) : false
+    }
+
+    set(update)
   },
 
   setGame: (game) => set({ game }),

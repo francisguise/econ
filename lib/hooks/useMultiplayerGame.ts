@@ -61,32 +61,28 @@ export function useMultiplayerGame(gameId: string, userId: string) {
 
   // Load initial data
   const loadInitialData = useCallback(async () => {
-    const store = useMultiplayerStore.getState()
     try {
       const res = await fetch(`/api/games/${gameId}`, { cache: 'no-store' })
       if (!res.ok) return
 
       const data = await res.json()
+      if (!data.game) return
 
-      if (data.game) store.setGame(mapGame(data.game))
-      if (data.players) store.setPlayers(data.players.map((p: Record<string, unknown>) => mapPlayer(p)))
-      if (data.currentQuarter) store.setCurrentQuarter(mapQuarter(data.currentQuarter))
-      else store.setCurrentQuarter(null)
-      if (data.submissions) {
-        store.setSubmittedPlayers(
-          data.submissions.map((s: Record<string, unknown>) => s.player_id as string)
-        )
-      }
-      if (data.snapshots) {
-        store.setSnapshots(data.snapshots.map((s: Record<string, unknown>) => ({
+      // Batch all updates into a single set() call to prevent intermediate renders
+      useMultiplayerStore.getState().setGameData({
+        game: mapGame(data.game),
+        players: (data.players || []).map((p: Record<string, unknown>) => mapPlayer(p)),
+        currentQuarter: data.currentQuarter ? mapQuarter(data.currentQuarter) : null,
+        submittedPlayerIds: (data.submissions || []).map((s: Record<string, unknown>) => s.player_id as string),
+        snapshots: (data.snapshots || []).map((s: Record<string, unknown>) => ({
           id: s.id as string,
           quarterId: s.quarter_id as string,
           gameId: s.game_id as string,
           playerId: s.player_id as string,
           metrics: s.metrics as Record<string, unknown>,
           createdAt: s.created_at as string,
-        })))
-      }
+        })),
+      })
     } catch (err) {
       console.error('Failed to load game data:', err)
     }

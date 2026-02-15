@@ -89,7 +89,7 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
         gameId={gameId}
         gameName={game.name}
         playerId={userId}
-        onJoined={() => { setShowJoinForm(false); setJoinedSuccessfully(true); router.replace(`/game/${gameId}`); refetch() }}
+        onJoined={() => { setShowJoinForm(false); setJoinedSuccessfully(true); refetch() }}
         onCancel={() => router.push('/')}
       />
     )
