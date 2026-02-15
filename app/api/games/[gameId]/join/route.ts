@@ -31,11 +31,11 @@ export async function POST(
   }
 
   if (game.status !== 'waiting') {
-    return NextResponse.json({ error: 'Game has already started' }, { status: 400 })
+    return NextResponse.json({ error: 'Game has already started', status: game.status }, { status: 400 })
   }
 
   if (game.game_players.length >= game.max_players) {
-    return NextResponse.json({ error: 'Game is full' }, { status: 400 })
+    return NextResponse.json({ error: 'Game is full', playerCount: game.game_players.length, maxPlayers: game.max_players }, { status: 400 })
   }
 
   // Check not already joined
@@ -47,7 +47,7 @@ export async function POST(
     .single()
 
   if (existing) {
-    return NextResponse.json({ error: 'Already joined this game' }, { status: 400 })
+    return NextResponse.json({ error: 'Already joined this game', userId, existingId: existing.id }, { status: 400 })
   }
 
   // Join
