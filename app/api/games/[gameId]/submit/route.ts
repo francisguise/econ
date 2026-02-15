@@ -88,14 +88,30 @@ export async function POST(
       ? `https://${process.env.VERCEL_URL}`
       : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
-    fetch(`${baseUrl}/api/resolve-quarter`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        quarterId: quarter.id,
-        gameId: params.gameId,
-      }),
-    }).catch(console.error) // Fire and forget
+    let resolutionError = false
+    try {
+      const resolveRes = await fetch(`${baseUrl}/api/resolve-quarter`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          quarterId: quarter.id,
+          gameId: params.gameId,
+        }),
+      })
+      if (!resolveRes.ok) {
+        console.error('Quarter resolution failed:', resolveRes.status, await resolveRes.text())
+        resolutionError = true
+      }
+    } catch (err) {
+      console.error('Quarter resolution request failed:', err)
+      resolutionError = true
+    }
+
+    return NextResponse.json({
+      success: true,
+      allSubmitted: true,
+      resolutionError,
+    })
   }
 
   return NextResponse.json({

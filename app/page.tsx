@@ -400,9 +400,9 @@ function DemoGame({ onBack }: { onBack: () => void }) {
                 Quarter {store.quarter} / {store.totalQuarters}
               </div>
               <div className="text-terminal-green text-sm">
-                {boxChars.darkShade.repeat(Math.round((store.quarter / store.totalQuarters) * 20))}
-                {boxChars.lightShade.repeat(20 - Math.round((store.quarter / store.totalQuarters) * 20))}
-                {' '}{Math.round((store.quarter / store.totalQuarters) * 100)}%
+                {boxChars.darkShade.repeat(Math.min(20, Math.max(0, Math.round((store.quarter / store.totalQuarters) * 20))))}
+                {boxChars.lightShade.repeat(Math.max(0, 20 - Math.round((store.quarter / store.totalQuarters) * 20)))}
+                {' '}{Math.min(100, Math.round((store.quarter / store.totalQuarters) * 100))}%
               </div>
               {!store.gameOver && (
                 <button

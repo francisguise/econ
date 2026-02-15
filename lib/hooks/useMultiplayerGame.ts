@@ -51,17 +51,17 @@ function mapQuarter(data: Record<string, unknown>): Quarter {
 }
 
 export function useMultiplayerGame(gameId: string, userId: string) {
-  const store = useMultiplayerStore()
   const supabaseRef = useRef(createBrowserSupabase())
   const supabase = supabaseRef.current
 
   // Set local user ID
   useEffect(() => {
-    store.setLocalUserId(userId)
-  }, [userId, store])
+    useMultiplayerStore.getState().setLocalUserId(userId)
+  }, [userId])
 
   // Load initial data
   const loadInitialData = useCallback(async () => {
+    const store = useMultiplayerStore.getState()
     try {
       const res = await fetch(`/api/games/${gameId}`)
       if (!res.ok) return
@@ -90,7 +90,11 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     } catch (err) {
       console.error('Failed to load game data:', err)
     }
-  }, [gameId, store])
+  }, [gameId])
+
+  // Keep a stable ref to loadInitialData for subscription callbacks
+  const loadInitialDataRef = useRef(loadInitialData)
+  loadInitialDataRef.current = loadInitialData
 
   useEffect(() => {
     loadInitialData()
@@ -107,9 +111,9 @@ export function useMultiplayerGame(gameId: string, userId: string) {
         table: 'games',
         filter: `id=eq.${gameId}`,
       }, (payload) => {
-        store.setGame(mapGame(payload.new as Record<string, unknown>))
+        useMultiplayerStore.getState().setGame(mapGame(payload.new as Record<string, unknown>))
         // Refetch players when game updates (quarter change = new scores)
-        loadInitialData()
+        loadInitialDataRef.current()
       })
       // Player joins/updates
       .on('postgres_changes', {
@@ -119,7 +123,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
         filter: `game_id=eq.${gameId}`,
       }, () => {
         // Refetch all players
-        loadInitialData()
+        loadInitialDataRef.current()
       })
       // Quarter updates
       .on('postgres_changes', {
@@ -128,7 +132,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
         table: 'quarters',
         filter: `game_id=eq.${gameId}`,
       }, () => {
-        loadInitialData()
+        loadInitialDataRef.current()
       })
       // Submission updates
       .on('postgres_changes', {
@@ -138,14 +142,14 @@ export function useMultiplayerGame(gameId: string, userId: string) {
         filter: `game_id=eq.${gameId}`,
       }, () => {
         // Re-fetch submissions
-        loadInitialData()
+        loadInitialDataRef.current()
       })
       .subscribe()
 
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [gameId, supabase, store, loadInitialData])
+  }, [gameId, supabase])
 
   // Presence
   useEffect(() => {
@@ -167,6 +171,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
 
   // Submit policies
   const submitPolicies = useCallback(async () => {
+    const store = useMultiplayerStore.getState()
     try {
       const res = await fetch(`/api/games/${gameId}/submit`, {
         method: 'POST',
@@ -184,13 +189,14 @@ export function useMultiplayerGame(gameId: string, userId: string) {
       store.addNotification('mage', 'Policies submitted successfully!', 'success')
       return true
     } catch {
-      store.addNotification('mage', 'Network error submitting policies', 'error')
+      useMultiplayerStore.getState().addNotification('mage', 'Network error submitting policies', 'error')
       return false
     }
-  }, [gameId, store])
+  }, [gameId, userId])
 
   // Start game
   const startGame = useCallback(async () => {
+    const store = useMultiplayerStore.getState()
     try {
       const res = await fetch(`/api/games/${gameId}/start`, {
         method: 'POST',
@@ -206,10 +212,10 @@ export function useMultiplayerGame(gameId: string, userId: string) {
       store.addNotification('warrior', 'Game started!', 'success')
       return true
     } catch {
-      store.addNotification('warrior', 'Network error starting game', 'error')
+      useMultiplayerStore.getState().addNotification('warrior', 'Network error starting game', 'error')
       return false
     }
-  }, [gameId, store])
+  }, [gameId, userId])
 
   return {
     submitPolicies,
