@@ -96,6 +96,50 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     loadInitialData()
   }, [loadInitialData])
 
+  // Trigger quarter resolution when timer expires
+  const resolveQuarterRef = useRef(false)
+  const currentQuarter = useMultiplayerStore(state => state.currentQuarter)
+
+  useEffect(() => {
+    if (!currentQuarter || currentQuarter.status !== 'active') {
+      resolveQuarterRef.current = false
+      return
+    }
+
+    const endsAt = new Date(currentQuarter.endsAt).getTime()
+    const now = Date.now()
+
+    if (now >= endsAt) {
+      // Already expired, trigger immediately
+      if (!resolveQuarterRef.current) {
+        resolveQuarterRef.current = true
+        fetch('/api/resolve-quarter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quarterId: currentQuarter.id, gameId }),
+        }).then(() => loadInitialDataRef.current())
+          .catch(() => { resolveQuarterRef.current = false })
+      }
+      return
+    }
+
+    // Schedule resolution for when the quarter expires
+    const delay = endsAt - now + 500 // 500ms buffer for clock skew
+    const timeout = setTimeout(() => {
+      if (!resolveQuarterRef.current) {
+        resolveQuarterRef.current = true
+        fetch('/api/resolve-quarter', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ quarterId: currentQuarter.id, gameId }),
+        }).then(() => loadInitialDataRef.current())
+          .catch(() => { resolveQuarterRef.current = false })
+      }
+    }, delay)
+
+    return () => clearTimeout(timeout)
+  }, [currentQuarter?.id, currentQuarter?.status, currentQuarter?.endsAt, gameId])
+
   // Poll as fallback for real-time (every 3s while waiting, 5s while active)
   const gameStatus = useMultiplayerStore(state => state.game?.status)
   useEffect(() => {

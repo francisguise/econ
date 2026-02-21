@@ -25,7 +25,14 @@ const DEFAULT_POLICIES: PolicyChoices = {
 function createServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!
+    process.env.SUPABASE_SERVICE_ROLE_KEY!,
+    {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        fetch: (input: RequestInfo | URL, init?: RequestInit) =>
+          fetch(input, { ...init, cache: 'no-store' }),
+      },
+    }
   )
 }
 
@@ -39,11 +46,18 @@ export async function POST(request: Request) {
   const supabase = createServiceClient()
 
   try {
-    // 1. Mark quarter as resolving
-    await supabase
+    // 1. Atomically mark quarter as resolving (only if still active)
+    const { data: updated, error: updateErr } = await supabase
       .from('quarters')
       .update({ status: 'resolving' })
       .eq('id', quarterId)
+      .eq('status', 'active')
+      .select('id')
+
+    if (updateErr || !updated || updated.length === 0) {
+      // Another client already started resolving this quarter
+      return NextResponse.json({ error: 'Quarter already resolving or completed' }, { status: 409 })
+    }
 
     // 2. Get player submissions for this quarter
     const { data: submissions } = await supabase
