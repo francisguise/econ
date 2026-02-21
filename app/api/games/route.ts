@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { SCORING_PRESETS, DEFAULT_PLAYER_RESOURCES, ScoringPreset } from '@/lib/types/game'
 
+export const dynamic = 'force-dynamic'
+
 export async function GET(request: Request) {
   const supabase = createServiceClient()
   const { searchParams } = new URL(request.url)
