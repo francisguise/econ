@@ -59,7 +59,9 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
     'c': () => setActiveTab('charts'),
     ' ': () => {
       const s = useMultiplayerStore.getState()
-      if (!s.hasSubmitted && s.game?.status === 'active') submitPolicies()
+      if (s.game?.status !== 'active') return
+      // Timer mode: allow resubmit; All-submit mode: only if not yet submitted
+      if (!s.hasSubmitted || s.game?.resolutionMode === 'timer') submitPolicies()
     },
   })
 
@@ -296,6 +298,7 @@ function WaitingRoom({
             <div className="text-terminal-bright-black">Quarters: <span className="text-terminal-foreground">{game.totalQuarters}</span></div>
             <div className="text-terminal-bright-black">Quarter Time: <span className="text-terminal-foreground">{game.quarterDurationSeconds}s</span></div>
             <div className="text-terminal-bright-black">Max Players: <span className="text-terminal-foreground">{game.maxPlayers}</span></div>
+            <div className="text-terminal-bright-black">Resolution: <span className="text-terminal-cyan">{game.resolutionMode === 'all_submit' ? 'All Submit' : 'Timer'}</span></div>
           </div>
 
           {/* Player list */}
@@ -457,6 +460,7 @@ function ActiveGame({
               totalQuarters={game.totalQuarters}
               hasSubmitted={hasSubmitted}
               onSubmit={onSubmit}
+              resolutionMode={game.resolutionMode}
             />
           )}
 
@@ -512,9 +516,17 @@ function ActiveGame({
               {boxChars.play} Submit Policies
             </button>
           )}
-          {hasSubmitted && (
+          {hasSubmitted && game.resolutionMode === 'timer' && (
+            <button
+              onClick={onSubmit}
+              className="w-full py-2 bg-terminal-cyan text-terminal-background font-bold text-sm hover:bg-terminal-cyan/80"
+            >
+              {boxChars.play} Resubmit Policies
+            </button>
+          )}
+          {hasSubmitted && game.resolutionMode !== 'timer' && (
             <div className="text-center py-2 text-terminal-green text-sm border border-terminal-green">
-              ✓ Policies Submitted — Waiting for other players
+              ✓ Policies Submitted — Waiting for all players
             </div>
           )}
         </div>
@@ -523,7 +535,7 @@ function ActiveGame({
       {/* Bottom status bar */}
       <div className="mt-2 px-2 py-1 border border-terminal-border text-xs text-terminal-bright-black flex justify-between">
         <span>[1-4] Minister | [A] Cabinet | [P] Policy | [C] Charts | [SPACE] Submit</span>
-        <span>{hasSubmitted ? '✓ Submitted' : 'Not submitted'} | Q{game.currentQuarter}/{game.totalQuarters}</span>
+        <span>{hasSubmitted ? (game.resolutionMode === 'timer' ? '✓ Submitted (resubmit OK)' : '✓ Locked') : 'Not submitted'} | Q{game.currentQuarter}/{game.totalQuarters}</span>
       </div>
     </div>
   )

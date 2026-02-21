@@ -25,6 +25,15 @@ export async function POST(
 
   const supabase = createServiceClient()
 
+  // Fetch game to get resolution mode
+  const { data: gameData } = await supabase
+    .from('games')
+    .select('resolution_mode')
+    .eq('id', params.gameId)
+    .single()
+
+  const resolutionMode = gameData?.resolution_mode || 'timer'
+
   // Verify player is in this game
   const { data: player } = await supabase
     .from('game_players')
@@ -49,7 +58,21 @@ export async function POST(
     return NextResponse.json({ error: 'No active quarter' }, { status: 400 })
   }
 
-  // Upsert submission
+  // In all_submit mode, check if player already submitted (no resubmit allowed)
+  if (resolutionMode === 'all_submit') {
+    const { data: existing } = await supabase
+      .from('player_submissions')
+      .select('id')
+      .eq('quarter_id', quarter.id)
+      .eq('player_id', userId)
+      .single()
+
+    if (existing) {
+      return NextResponse.json({ error: 'Already submitted' }, { status: 409 })
+    }
+  }
+
+  // Upsert submission (in timer mode this allows resubmit; in all_submit mode we checked above)
   const { error: submitError } = await supabase
     .from('player_submissions')
     .upsert(
@@ -67,7 +90,15 @@ export async function POST(
     return NextResponse.json({ error: submitError.message }, { status: 500 })
   }
 
-  // Check if all players have submitted
+  // In timer mode, don't trigger early resolution — wait for timer expiry
+  if (resolutionMode === 'timer') {
+    return NextResponse.json({
+      success: true,
+      allSubmitted: false,
+    })
+  }
+
+  // In all_submit mode, check if all players have submitted and trigger resolution
   const { data: allPlayers } = await supabase
     .from('game_players')
     .select('id')
@@ -82,7 +113,6 @@ export async function POST(
   const allSubmitted = allPlayers && allSubmissions &&
     allSubmissions.length >= allPlayers.length
 
-  // If all submitted, trigger early resolution
   if (allSubmitted) {
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
@@ -116,6 +146,6 @@ export async function POST(
 
   return NextResponse.json({
     success: true,
-    allSubmitted: !!allSubmitted,
+    allSubmitted: false,
   })
 }

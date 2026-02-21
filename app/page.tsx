@@ -13,7 +13,7 @@ import { MinisterActionPanel } from '@/components/tui/MinisterActionPanel'
 import { PolicyPanel } from '@/components/game/PolicyPanel'
 import { GameList } from '@/components/game/GameList'
 import { boxChars } from '@/lib/assets/box-chars'
-import { ScoringPreset, SCORING_PRESETS, AVAILABLE_PLAYER_EMOJIS } from '@/lib/types/game'
+import { ScoringPreset, SCORING_PRESETS, AVAILABLE_PLAYER_EMOJIS, ResolutionMode } from '@/lib/types/game'
 import { MinisterRole } from '@/lib/types/cabinet'
 import { useGameStore } from '@/lib/store/gameStore'
 
@@ -129,6 +129,7 @@ function CreateGameView({ onBack }: { onBack: () => void }) {
   const [totalQuarters, setTotalQuarters] = useState(40)
   const [quarterDuration, setQuarterDuration] = useState(300)
   const [maxPlayers, setMaxPlayers] = useState(6)
+  const [resolutionMode, setResolutionMode] = useState<ResolutionMode>('timer')
   const [creating, setCreating] = useState(false)
   const [error, setError] = useState('')
 
@@ -153,6 +154,7 @@ function CreateGameView({ onBack }: { onBack: () => void }) {
           totalQuarters,
           quarterDurationSeconds: quarterDuration,
           maxPlayers,
+          resolutionMode,
         }),
       })
 
@@ -234,6 +236,23 @@ function CreateGameView({ onBack }: { onBack: () => void }) {
           </select>
         </div>
 
+        <div>
+          <label className="text-terminal-cyan text-xs block mb-1">Resolution Mode:</label>
+          <select
+            value={resolutionMode}
+            onChange={e => setResolutionMode(e.target.value as ResolutionMode)}
+            className="w-full bg-terminal-background border border-terminal-border text-terminal-foreground px-3 py-2 text-sm"
+          >
+            <option value="timer">Timer (resubmit allowed)</option>
+            <option value="all_submit">All Submit (submit once)</option>
+          </select>
+          <div className="text-terminal-bright-black text-xs mt-1">
+            {resolutionMode === 'timer'
+              ? 'Quarter resolves when timer expires. Players can resubmit policies until then.'
+              : 'Each player submits once. Quarter resolves when all players have submitted.'}
+          </div>
+        </div>
+
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label className="text-terminal-cyan text-xs block mb-1">Quarters:</label>
@@ -249,7 +268,9 @@ function CreateGameView({ onBack }: { onBack: () => void }) {
             </select>
           </div>
           <div>
-            <label className="text-terminal-cyan text-xs block mb-1">Quarter Time:</label>
+            <label className="text-terminal-cyan text-xs block mb-1">
+              {resolutionMode === 'all_submit' ? 'Deadline (fallback):' : 'Quarter Time:'}
+            </label>
             <select
               value={quarterDuration}
               onChange={e => setQuarterDuration(parseInt(e.target.value))}

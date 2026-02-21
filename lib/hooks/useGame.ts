@@ -28,6 +28,7 @@ export function useGame(gameId: string) {
         totalQuarters: data.total_quarters,
         quarterDurationSeconds: data.quarter_duration_seconds,
         visibilityMode: data.visibility_mode,
+        resolutionMode: data.resolution_mode || 'timer',
         maxPlayers: data.max_players,
         scoringPreset: data.scoring_preset,
         scoringWeights: data.scoring_weights,

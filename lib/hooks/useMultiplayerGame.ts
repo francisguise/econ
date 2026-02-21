@@ -14,6 +14,7 @@ function mapGame(data: Record<string, unknown>): Game {
     totalQuarters: data.total_quarters as number,
     quarterDurationSeconds: data.quarter_duration_seconds as number,
     visibilityMode: data.visibility_mode as Game['visibilityMode'],
+    resolutionMode: (data.resolution_mode || 'timer') as Game['resolutionMode'],
     maxPlayers: data.max_players as number,
     scoringPreset: data.scoring_preset as Game['scoringPreset'],
     scoringWeights: data.scoring_weights as Game['scoringWeights'],
@@ -96,11 +97,15 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     loadInitialData()
   }, [loadInitialData])
 
-  // Trigger quarter resolution when timer expires
+  // Trigger quarter resolution when timer expires (only in timer mode)
   const resolveQuarterRef = useRef(false)
   const currentQuarter = useMultiplayerStore(state => state.currentQuarter)
+  const resolutionMode = useMultiplayerStore(state => state.game?.resolutionMode)
 
   useEffect(() => {
+    // In all_submit mode, resolution is triggered server-side when all players submit
+    if (resolutionMode === 'all_submit') return
+
     if (!currentQuarter || currentQuarter.status !== 'active') {
       resolveQuarterRef.current = false
       return
@@ -138,7 +143,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     }, delay)
 
     return () => clearTimeout(timeout)
-  }, [currentQuarter?.id, currentQuarter?.status, currentQuarter?.endsAt, gameId])
+  }, [currentQuarter?.id, currentQuarter?.status, currentQuarter?.endsAt, gameId, resolutionMode])
 
   // Poll as fallback for real-time (every 3s while waiting, 5s while active)
   const gameStatus = useMultiplayerStore(state => state.game?.status)

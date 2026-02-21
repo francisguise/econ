@@ -44,6 +44,7 @@ export async function POST(request: Request) {
     visibilityMode = 'full',
     playerName,
     playerEmoji = '👑',
+    resolutionMode = 'timer',
   } = body
 
   if (!name || !playerName) {
@@ -64,6 +65,7 @@ export async function POST(request: Request) {
       total_quarters: totalQuarters,
       quarter_duration_seconds: quarterDurationSeconds,
       visibility_mode: visibilityMode,
+      resolution_mode: resolutionMode,
       max_players: maxPlayers,
       scoring_preset: scoringPreset,
       scoring_weights: weights,

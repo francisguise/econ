@@ -3,6 +3,7 @@ import { CabinetAssignment, MinisterRole } from './cabinet'
 export type GameStatus = 'waiting' | 'active' | 'resolving' | 'completed'
 export type QuarterStatus = 'active' | 'resolving' | 'completed'
 export type VisibilityMode = 'full' | 'blind' | 'partial'
+export type ResolutionMode = 'timer' | 'all_submit'
 
 export type ScoringPreset =
   | 'balanced_growth'
@@ -36,6 +37,7 @@ export interface Game {
   totalQuarters: number
   quarterDurationSeconds: number
   visibilityMode: VisibilityMode
+  resolutionMode: ResolutionMode
   maxPlayers: number
   scoringPreset: ScoringPreset
   scoringWeights: ScoringWeights
