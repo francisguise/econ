@@ -110,17 +110,23 @@ export async function POST(
     .select('id')
     .eq('quarter_id', quarter.id)
 
-  const allSubmitted = allPlayers && allSubmissions &&
-    allSubmissions.length >= allPlayers.length
+  const playerCount = allPlayers?.length ?? 0
+  const submissionCount = allSubmissions?.length ?? 0
+  const allSubmitted = playerCount > 0 && submissionCount >= playerCount
+
+  console.log(`[submit] all_submit check: ${submissionCount}/${playerCount} submissions, allSubmitted=${allSubmitted}, quarterId=${quarter.id}`)
 
   if (allSubmitted) {
     const baseUrl = process.env.VERCEL_URL
       ? `https://${process.env.VERCEL_URL}`
       : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
 
+    const resolveUrl = `${baseUrl}/api/resolve-quarter`
+    console.log(`[submit] Triggering resolution at ${resolveUrl}`)
+
     let resolutionError = false
     try {
-      const resolveRes = await fetch(`${baseUrl}/api/resolve-quarter`, {
+      const resolveRes = await fetch(resolveUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -129,11 +135,14 @@ export async function POST(
         }),
       })
       if (!resolveRes.ok) {
-        console.error('Quarter resolution failed:', resolveRes.status, await resolveRes.text())
+        const errText = await resolveRes.text()
+        console.error(`[submit] Resolution failed: ${resolveRes.status} ${errText}`)
         resolutionError = true
+      } else {
+        console.log('[submit] Resolution succeeded')
       }
     } catch (err) {
-      console.error('Quarter resolution request failed:', err)
+      console.error('[submit] Resolution request failed:', err)
       resolutionError = true
     }
 
@@ -141,11 +150,13 @@ export async function POST(
       success: true,
       allSubmitted: true,
       resolutionError,
+      debug: { playerCount, submissionCount },
     })
   }
 
   return NextResponse.json({
     success: true,
     allSubmitted: false,
+    debug: { playerCount, submissionCount },
   })
 }

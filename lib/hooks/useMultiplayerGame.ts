@@ -241,7 +241,8 @@ export function useMultiplayerGame(gameId: string, userId: string) {
 
       const result = await res.json()
       store.setHasSubmitted(true)
-      store.addNotification('mage', 'Policies submitted successfully!', 'success')
+      const dbg = result.debug ? ` (${result.debug.submissionCount}/${result.debug.playerCount} submitted)` : ''
+      store.addNotification('mage', `Policies submitted!${dbg}${result.allSubmitted ? ' — Resolving quarter...' : ''}`, 'success')
 
       // If all players submitted and resolution was triggered, refetch to pick up new state
       if (result.allSubmitted) {
