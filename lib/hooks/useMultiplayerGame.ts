@@ -97,15 +97,12 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     loadInitialData()
   }, [loadInitialData])
 
-  // Trigger quarter resolution when timer expires (only in timer mode)
+  // Trigger quarter resolution when timer expires (deadline fallback in both modes)
   const resolveQuarterRef = useRef(false)
   const currentQuarter = useMultiplayerStore(state => state.currentQuarter)
   const resolutionMode = useMultiplayerStore(state => state.game?.resolutionMode)
 
   useEffect(() => {
-    // In all_submit mode, resolution is triggered server-side when all players submit
-    if (resolutionMode === 'all_submit') return
-
     if (!currentQuarter || currentQuarter.status !== 'active') {
       resolveQuarterRef.current = false
       return
@@ -242,8 +239,15 @@ export function useMultiplayerGame(gameId: string, userId: string) {
         return false
       }
 
+      const result = await res.json()
       store.setHasSubmitted(true)
       store.addNotification('mage', 'Policies submitted successfully!', 'success')
+
+      // If all players submitted and resolution was triggered, refetch to pick up new state
+      if (result.allSubmitted) {
+        setTimeout(() => loadInitialDataRef.current(), 1000)
+      }
+
       return true
     } catch {
       useMultiplayerStore.getState().addNotification('mage', 'Network error submitting policies', 'error')
