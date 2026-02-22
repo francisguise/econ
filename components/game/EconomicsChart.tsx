@@ -3,6 +3,7 @@
 import { Panel } from '@/components/tui/Panel'
 import { QuarterSnapshot } from '@/lib/types/game'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { useChartColors } from '@/lib/hooks/useChartColors'
 
 interface EconomicsChartProps {
   localUserId: string
@@ -10,6 +11,8 @@ interface EconomicsChartProps {
 }
 
 export function EconomicsChart({ localUserId, snapshots }: EconomicsChartProps) {
+  const colors = useChartColors()
+
   // Filter to local player's snapshots
   const playerSnapshots = snapshots.filter(s => s.playerId === localUserId)
 
@@ -41,29 +44,29 @@ export function EconomicsChart({ localUserId, snapshots }: EconomicsChartProps) 
           <LineChart data={chartData}>
             <XAxis
               dataKey="quarter"
-              tick={{ fill: '#808080', fontSize: 10 }}
-              axisLine={{ stroke: '#808080' }}
+              tick={{ fill: colors.border, fontSize: 10 }}
+              axisLine={{ stroke: colors.border }}
             />
             <YAxis
-              tick={{ fill: '#808080', fontSize: 10 }}
-              axisLine={{ stroke: '#808080' }}
+              tick={{ fill: colors.border, fontSize: 10 }}
+              axisLine={{ stroke: colors.border }}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0C0C0C',
-                border: '1px solid #808080',
+                backgroundColor: colors.background,
+                border: `1px solid ${colors.border}`,
                 fontFamily: 'monospace',
                 fontSize: 11,
               }}
-              labelStyle={{ color: '#00FFFF' }}
+              labelStyle={{ color: colors.cyan }}
             />
             <Legend
               wrapperStyle={{ fontSize: 10, fontFamily: 'monospace' }}
             />
-            <Line type="monotone" dataKey="GDP ($T)" stroke="#00FF00" dot={false} strokeWidth={2} />
-            <Line type="monotone" dataKey="Inflation (%)" stroke="#FF6B6B" dot={false} strokeWidth={1.5} />
-            <Line type="monotone" dataKey="Pop (M)" stroke="#4D96FF" dot={false} strokeWidth={1.5} />
-            <Line type="monotone" dataKey="Unemployment (%)" stroke="#FFD93D" dot={false} strokeWidth={1.5} />
+            <Line type="monotone" dataKey="GDP ($T)" stroke={colors.green} dot={false} strokeWidth={2} />
+            <Line type="monotone" dataKey="Inflation (%)" stroke={colors.red} dot={false} strokeWidth={1.5} />
+            <Line type="monotone" dataKey="Pop (M)" stroke={colors.blue} dot={false} strokeWidth={1.5} />
+            <Line type="monotone" dataKey="Unemployment (%)" stroke={colors.yellow} dot={false} strokeWidth={1.5} />
           </LineChart>
         </ResponsiveContainer>
       </div>

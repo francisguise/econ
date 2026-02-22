@@ -16,6 +16,7 @@ import { boxChars } from '@/lib/assets/box-chars'
 import { ScoringPreset, SCORING_PRESETS, AVAILABLE_PLAYER_EMOJIS, ResolutionMode } from '@/lib/types/game'
 import { MinisterRole } from '@/lib/types/cabinet'
 import { useGameStore } from '@/lib/store/gameStore'
+import { ThemePicker } from '@/components/tui/ThemePicker'
 
 
 export default function HomePage() {
@@ -115,6 +116,8 @@ function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => v
           ))}
         </div>
       </Panel>
+
+      <ThemePicker />
     </div>
   )
 }

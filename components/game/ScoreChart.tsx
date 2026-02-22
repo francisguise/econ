@@ -3,18 +3,11 @@
 import { Panel } from '@/components/tui/Panel'
 import { GamePlayer, QuarterSnapshot } from '@/lib/types/game'
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, Legend } from 'recharts'
+import { useChartColors } from '@/lib/hooks/useChartColors'
 
 const PLAYER_COLORS = [
-  '#00FF00', // green
-  '#FF6B6B', // red
-  '#FFD93D', // yellow
-  '#6BCB77', // light green
-  '#4D96FF', // blue
-  '#FF6FB7', // pink
-  '#C490E4', // purple
-  '#FF9F45', // orange
-  '#45FFF4', // cyan
-  '#B8B8B8', // gray
+  '#00FF00', '#FF6B6B', '#FFD93D', '#6BCB77', '#4D96FF',
+  '#FF6FB7', '#C490E4', '#FF9F45', '#45FFF4', '#B8B8B8',
 ]
 
 interface ScoreChartProps {
@@ -23,6 +16,8 @@ interface ScoreChartProps {
 }
 
 export function ScoreChart({ players, snapshots }: ScoreChartProps) {
+  const colors = useChartColors()
+
   if (snapshots.length === 0) {
     return (
       <Panel title="SCORE TRENDS">
@@ -63,21 +58,21 @@ export function ScoreChart({ players, snapshots }: ScoreChartProps) {
           <LineChart data={chartData}>
             <XAxis
               dataKey="quarter"
-              tick={{ fill: '#808080', fontSize: 10 }}
-              axisLine={{ stroke: '#808080' }}
+              tick={{ fill: colors.border, fontSize: 10 }}
+              axisLine={{ stroke: colors.border }}
             />
             <YAxis
-              tick={{ fill: '#808080', fontSize: 10 }}
-              axisLine={{ stroke: '#808080' }}
+              tick={{ fill: colors.border, fontSize: 10 }}
+              axisLine={{ stroke: colors.border }}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0C0C0C',
-                border: '1px solid #808080',
+                backgroundColor: colors.background,
+                border: `1px solid ${colors.border}`,
                 fontFamily: 'monospace',
                 fontSize: 11,
               }}
-              labelStyle={{ color: '#00FFFF' }}
+              labelStyle={{ color: colors.cyan }}
             />
             <Legend
               wrapperStyle={{ fontSize: 10, fontFamily: 'monospace' }}

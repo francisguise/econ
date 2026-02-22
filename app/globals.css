@@ -2,14 +2,157 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #0C0C0C;
-  --foreground: #CCCCCC;
+/* ─── Classic (default dark terminal) ─────────────────── */
+:root,
+[data-theme="classic"] {
+  --terminal-background: #0C0C0C;
+  --terminal-foreground: #CCCCCC;
+  --terminal-border: #808080;
+  --terminal-green: #00FF00;
+  --terminal-cyan: #00FFFF;
+  --terminal-yellow: #FFFF00;
+  --terminal-red: #FF0000;
+  --terminal-magenta: #FF00FF;
+  --terminal-blue: #0000FF;
+  --terminal-white: #FFFFFF;
+  --terminal-bright-black: #808080;
+  --terminal-bright-red: #FF8080;
+  --terminal-bright-green: #80FF80;
+  --terminal-bright-yellow: #FFFF80;
+  --terminal-bright-blue: #8080FF;
+  --terminal-bright-magenta: #FF80FF;
+  --terminal-bright-cyan: #80FFFF;
+}
+
+/* ─── Solarized Dark ─────────────────────────────────── */
+[data-theme="solarized-dark"] {
+  --terminal-background: #002b36;
+  --terminal-foreground: #839496;
+  --terminal-border: #586e75;
+  --terminal-green: #859900;
+  --terminal-cyan: #2aa198;
+  --terminal-yellow: #b58900;
+  --terminal-red: #dc322f;
+  --terminal-magenta: #d33682;
+  --terminal-blue: #268bd2;
+  --terminal-white: #eee8d5;
+  --terminal-bright-black: #657b83;
+  --terminal-bright-red: #cb4b16;
+  --terminal-bright-green: #a4c639;
+  --terminal-bright-yellow: #d4a017;
+  --terminal-bright-blue: #6c9bcf;
+  --terminal-bright-magenta: #c06090;
+  --terminal-bright-cyan: #66b2b2;
+}
+
+/* ─── Solarized Light ────────────────────────────────── */
+[data-theme="solarized-light"] {
+  --terminal-background: #fdf6e3;
+  --terminal-foreground: #586e75;
+  --terminal-border: #93a1a1;
+  --terminal-green: #859900;
+  --terminal-cyan: #2aa198;
+  --terminal-yellow: #b58900;
+  --terminal-red: #dc322f;
+  --terminal-magenta: #d33682;
+  --terminal-blue: #268bd2;
+  --terminal-white: #002b36;
+  --terminal-bright-black: #93a1a1;
+  --terminal-bright-red: #cb4b16;
+  --terminal-bright-green: #6b8e00;
+  --terminal-bright-yellow: #9a7200;
+  --terminal-bright-blue: #4a7fb5;
+  --terminal-bright-magenta: #a02870;
+  --terminal-bright-cyan: #1a8a82;
+}
+
+/* ─── Deep Purple ────────────────────────────────────── */
+[data-theme="deep-purple"] {
+  --terminal-background: #1a0a2e;
+  --terminal-foreground: #d4c4f0;
+  --terminal-border: #6b3fa0;
+  --terminal-green: #7cff7c;
+  --terminal-cyan: #a78bfa;
+  --terminal-yellow: #fbbf24;
+  --terminal-red: #f87171;
+  --terminal-magenta: #e879f9;
+  --terminal-blue: #818cf8;
+  --terminal-white: #f3e8ff;
+  --terminal-bright-black: #7e5baa;
+  --terminal-bright-red: #fca5a5;
+  --terminal-bright-green: #a7f3d0;
+  --terminal-bright-yellow: #fde68a;
+  --terminal-bright-blue: #a5b4fc;
+  --terminal-bright-magenta: #f0abfc;
+  --terminal-bright-cyan: #c4b5fd;
+}
+
+/* ─── Amber CRT ──────────────────────────────────────── */
+[data-theme="amber-crt"] {
+  --terminal-background: #1a1000;
+  --terminal-foreground: #ffb000;
+  --terminal-border: #664400;
+  --terminal-green: #ffb000;
+  --terminal-cyan: #ffc850;
+  --terminal-yellow: #ffd700;
+  --terminal-red: #ff6600;
+  --terminal-magenta: #ff8844;
+  --terminal-blue: #cc8800;
+  --terminal-white: #ffe0a0;
+  --terminal-bright-black: #805500;
+  --terminal-bright-red: #ff8833;
+  --terminal-bright-green: #ffcc44;
+  --terminal-bright-yellow: #ffe066;
+  --terminal-bright-blue: #ddaa44;
+  --terminal-bright-magenta: #ffaa55;
+  --terminal-bright-cyan: #ffdd88;
+}
+
+/* ─── Nord ───────────────────────────────────────────── */
+[data-theme="nord"] {
+  --terminal-background: #2e3440;
+  --terminal-foreground: #d8dee9;
+  --terminal-border: #4c566a;
+  --terminal-green: #a3be8c;
+  --terminal-cyan: #88c0d0;
+  --terminal-yellow: #ebcb8b;
+  --terminal-red: #bf616a;
+  --terminal-magenta: #b48ead;
+  --terminal-blue: #81a1c1;
+  --terminal-white: #eceff4;
+  --terminal-bright-black: #4c566a;
+  --terminal-bright-red: #d08770;
+  --terminal-bright-green: #b5d19c;
+  --terminal-bright-yellow: #f0d9a0;
+  --terminal-bright-blue: #8fabc4;
+  --terminal-bright-magenta: #c9a0c1;
+  --terminal-bright-cyan: #9dd0dd;
+}
+
+/* ─── Gruvbox ────────────────────────────────────────── */
+[data-theme="gruvbox"] {
+  --terminal-background: #282828;
+  --terminal-foreground: #ebdbb2;
+  --terminal-border: #665c54;
+  --terminal-green: #b8bb26;
+  --terminal-cyan: #8ec07c;
+  --terminal-yellow: #fabd2f;
+  --terminal-red: #fb4934;
+  --terminal-magenta: #d3869b;
+  --terminal-blue: #83a598;
+  --terminal-white: #fbf1c7;
+  --terminal-bright-black: #928374;
+  --terminal-bright-red: #fe8019;
+  --terminal-bright-green: #c9cc38;
+  --terminal-bright-yellow: #fdd64e;
+  --terminal-bright-blue: #a4c4ab;
+  --terminal-bright-magenta: #e0a0b0;
+  --terminal-bright-cyan: #a8d4a0;
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
+  color: var(--terminal-foreground);
+  background: var(--terminal-background);
 }
 
 /* Scrollbar styling for terminal aesthetic */
@@ -18,15 +161,15 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0C0C0C;
+  background: var(--terminal-background);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #808080;
+  background: var(--terminal-border);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #CCCCCC;
+  background: var(--terminal-foreground);
 }
 
 /* Terminal cursor blink */

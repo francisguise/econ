@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { JetBrains_Mono } from 'next/font/google'
 import "./globals.css";
+import { ThemeInitScript } from './theme-init'
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ['latin'],
@@ -18,7 +19,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={jetbrainsMono.variable}>
+    <html lang="en" className={jetbrainsMono.variable} suppressHydrationWarning>
+      <head>
+        <ThemeInitScript />
+      </head>
       <body className="font-mono bg-terminal-background text-terminal-foreground min-h-screen">
         {children}
       </body>
