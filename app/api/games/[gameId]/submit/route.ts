@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
 import { validatePolicies } from '@/lib/game-logic/validation'
+import { executeQuarterResolution } from '@/lib/game-logic/resolveQuarter'
 
 export async function POST(
   request: Request,
@@ -114,35 +115,14 @@ export async function POST(
   const submissionCount = allSubmissions?.length ?? 0
   const allSubmitted = playerCount > 0 && submissionCount >= playerCount
 
-  console.log(`[submit] all_submit check: ${submissionCount}/${playerCount} submissions, allSubmitted=${allSubmitted}, quarterId=${quarter.id}`)
-
   if (allSubmitted) {
-    const baseUrl = process.env.VERCEL_URL
-      ? `https://${process.env.VERCEL_URL}`
-      : process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
-
-    const resolveUrl = `${baseUrl}/api/resolve-quarter`
-    console.log(`[submit] Triggering resolution at ${resolveUrl}`)
-
     let resolutionError = false
     try {
-      const resolveRes = await fetch(resolveUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          quarterId: quarter.id,
-          gameId: params.gameId,
-        }),
-      })
-      if (!resolveRes.ok) {
-        const errText = await resolveRes.text()
-        console.error(`[submit] Resolution failed: ${resolveRes.status} ${errText}`)
+      const resolveResult = await executeQuarterResolution(quarter.id, params.gameId)
+      if (!resolveResult.success) {
         resolutionError = true
-      } else {
-        console.log('[submit] Resolution succeeded')
       }
-    } catch (err) {
-      console.error('[submit] Resolution request failed:', err)
+    } catch {
       resolutionError = true
     }
 
