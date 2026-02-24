@@ -92,15 +92,66 @@ function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => v
       <Panel title="HOW IT WORKS">
         <div className="text-xs space-y-2 text-terminal-bright-black">
           <p className="text-terminal-foreground">Each quarter, you manage your nation{"'"}s economy through 4 cabinet ministers:</p>
-          <div className="grid grid-cols-2 gap-1 text-terminal-foreground">
-            <span>⚔️ <span className="text-terminal-red">Warrior</span> - Trade & Tariffs</span>
-            <span>🔮 <span className="text-terminal-magenta">Mage</span> - Interest Rates & Inflation</span>
-            <span>🔧 <span className="text-terminal-yellow">Engineer</span> - Infrastructure & Growth</span>
-            <span>🤝 <span className="text-terminal-cyan">Diplomat</span> - Trade Deals & Immigration</span>
-          </div>
+
+          <details className="border border-terminal-border">
+            <summary className="px-2 py-1 cursor-pointer text-terminal-foreground hover:bg-terminal-bright-black">
+              ⚔️ <span className="text-terminal-red">Warrior</span> - Trade & Competition
+            </summary>
+            <div className="px-2 py-1 space-y-1 text-terminal-foreground border-t border-terminal-border">
+              <div><span className="text-terminal-cyan">Tariff Management</span> - Adjust trade tariffs and import policy</div>
+              <div><span className="text-terminal-cyan">Strategic Reserves</span> - Build commodity buffers against shocks</div>
+              <div><span className="text-terminal-cyan">Currency Defense</span> - Protect exchange rate from speculation</div>
+              <div><span className="text-terminal-cyan">Economic Warfare</span> <span className="text-terminal-yellow">[F4]</span> - Devastating tariffs or competitive devaluation</div>
+            </div>
+          </details>
+
+          <details className="border border-terminal-border">
+            <summary className="px-2 py-1 cursor-pointer text-terminal-foreground hover:bg-terminal-bright-black">
+              🔮 <span className="text-terminal-magenta">Mage</span> - Central Bank
+            </summary>
+            <div className="px-2 py-1 space-y-1 text-terminal-foreground border-t border-terminal-border">
+              <div><span className="text-terminal-cyan">Interest Rate Control</span> - Set rates via CBRF or manually</div>
+              <div><span className="text-terminal-cyan">QE Management</span> - Expand or contract money supply</div>
+              <div><span className="text-terminal-cyan">Inflation Targeting</span> - Anchor inflation expectations (focus 3+: -5%/level)</div>
+              <div><span className="text-terminal-cyan">Financial Stability</span> - Reduce financial crisis risk</div>
+              <div><span className="text-terminal-cyan">Forward Guidance</span> <span className="text-terminal-yellow">[F3]</span> - Commit interest rate path</div>
+            </div>
+          </details>
+
+          <details className="border border-terminal-border">
+            <summary className="px-2 py-1 cursor-pointer text-terminal-foreground hover:bg-terminal-bright-black">
+              🔧 <span className="text-terminal-yellow">Engineer</span> - Development
+            </summary>
+            <div className="px-2 py-1 space-y-1 text-terminal-foreground border-t border-terminal-border">
+              <div><span className="text-terminal-cyan">Infrastructure</span> - Boost infra index + potential GDP</div>
+              <div><span className="text-terminal-cyan">Education</span> - Raise education index (improves QoL)</div>
+              <div><span className="text-terminal-cyan">Healthcare</span> - Raise healthcare index (reduces death rate, improves QoL)</div>
+              <div><span className="text-terminal-cyan">Productivity</span> - Drive total factor productivity growth</div>
+              <div><span className="text-terminal-cyan">Green Transition</span> <span className="text-terminal-yellow">[F3]</span> - Long-term sustainability investment</div>
+            </div>
+          </details>
+
+          <details className="border border-terminal-border">
+            <summary className="px-2 py-1 cursor-pointer text-terminal-foreground hover:bg-terminal-bright-black">
+              🤝 <span className="text-terminal-cyan">Diplomat</span> - Foreign Affairs
+            </summary>
+            <div className="px-2 py-1 space-y-1 text-terminal-foreground border-t border-terminal-border">
+              <div><span className="text-terminal-cyan">Trade Negotiations</span> - Improve trade terms, reduce retaliation</div>
+              <div><span className="text-terminal-cyan">Immigration Policy</span> - Direct population bonus (open=2.5%, mod=1%)</div>
+              <div><span className="text-terminal-cyan">International Aid</span> <span className="text-terminal-yellow">[F3]</span> - Build alliances, reduce trade friction</div>
+              <div><span className="text-terminal-cyan">Crisis Management</span> - Buffer against trade disputes</div>
+              <div><span className="text-terminal-cyan">Global Initiatives</span> <span className="text-terminal-yellow">[F4]</span> - Currency unions, coordinated stimulus</div>
+            </div>
+          </details>
+
           <p>Allocate <span className="text-terminal-yellow">10 focus points</span> across ministers. Higher focus = stronger effects.</p>
           <p>Set monetary policy, fiscal spending, taxes, and trade policy.</p>
-          <p>Compete for the highest score based on GDP growth, stability, and demographics.</p>
+          <p>Nations interact through capital flows, trade, migration, and monetary spillovers.</p>
+          <p>
+            <a href="/wiki" className="text-terminal-cyan hover:text-terminal-green underline">
+              Full Wiki &rarr; Economic models, theories, and detailed mechanics
+            </a>
+          </p>
         </div>
       </Panel>
 
