@@ -14,32 +14,69 @@ import { LogEntry } from '@/components/tui/ActionLog'
 import { resolveQuarterLogic, ResolutionInput } from '@/lib/game-logic/resolution'
 import { ministerDefinitions } from '@/lib/assets/minister-roles'
 
-// AI opponent strategies
-const AI_STRATEGIES: Record<string, CabinetAssignment> = {
-  balanced: {
-    warrior: { focus: 2, assignment: 'tariff_management' },
-    mage: { focus: 3, assignment: 'interest_rate_control' },
-    engineer: { focus: 3, assignment: 'infrastructure' },
-    diplomat: { focus: 2, assignment: 'trade_negotiations' },
-  },
+// AI personality configurations
+interface AIPersonality {
+  stimulateOutputGap: number
+  stabilizeInflation: number
+  stabilizeDebt: number
+  protectTradeBalance: number
+  spendingBias: 'education' | 'healthcare' | 'infrastructure'
+  immigrationBias: 'restrictive' | 'moderate' | 'open'
+  startingPolicies: {
+    taxRate: number
+    edu: number; health: number; infra: number
+    immigration: 'restrictive' | 'moderate' | 'open'
+    tariffRate: number
+  }
+}
+
+const AI_PERSONALITIES: Record<string, AIPersonality> = {
   growth: {
-    warrior: { focus: 1, assignment: 'tariff_management' },
-    mage: { focus: 2, assignment: 'interest_rate_control' },
-    engineer: { focus: 4, assignment: 'infrastructure' },
-    diplomat: { focus: 3, assignment: 'immigration_policy' },
+    stimulateOutputGap: -0.01,
+    stabilizeInflation: 5,
+    stabilizeDebt: 110,
+    protectTradeBalance: -5,
+    spendingBias: 'infrastructure',
+    immigrationBias: 'open',
+    startingPolicies: { taxRate: 25, edu: 4, health: 5, infra: 6, immigration: 'moderate', tariffRate: 3 },
   },
   stability: {
-    warrior: { focus: 2, assignment: 'currency_defense' },
-    mage: { focus: 4, assignment: 'inflation_targeting' },
-    engineer: { focus: 2, assignment: 'infrastructure' },
-    diplomat: { focus: 2, assignment: 'trade_negotiations' },
+    stimulateOutputGap: -0.05,
+    stabilizeInflation: 3,
+    stabilizeDebt: 90,
+    protectTradeBalance: -5,
+    spendingBias: 'healthcare',
+    immigrationBias: 'moderate',
+    startingPolicies: { taxRate: 30, edu: 4, health: 7, infra: 4, immigration: 'moderate', tariffRate: 5 },
   },
   trade: {
-    warrior: { focus: 3, assignment: 'tariff_management' },
-    mage: { focus: 2, assignment: 'interest_rate_control' },
-    engineer: { focus: 1, assignment: 'infrastructure' },
-    diplomat: { focus: 4, assignment: 'trade_negotiations' },
+    stimulateOutputGap: -0.03,
+    stabilizeInflation: 4,
+    stabilizeDebt: 100,
+    protectTradeBalance: -3,
+    spendingBias: 'education',
+    immigrationBias: 'moderate',
+    startingPolicies: { taxRate: 28, edu: 4, health: 5, infra: 6, immigration: 'moderate', tariffRate: 8 },
   },
+}
+
+type MacroStance = 'STIMULATE' | 'STABILIZE' | 'PROTECT' | 'GROW'
+
+function nudge(current: number, target: number, step: number): number {
+  if (current < target) return Math.min(current + step, target)
+  if (current > target) return Math.max(current - step, target)
+  return current
+}
+
+const ORDERED_IMMIGRATION = ['restrictive', 'moderate', 'open'] as const
+const ORDERED_CONTROLS = ['open', 'moderate', 'strict'] as const
+const ORDERED_QE = ['tightening', 'neutral', 'easing'] as const
+
+function stepCategorical<T extends string>(current: T, target: T, ordered: readonly T[]): T {
+  const ci = ordered.indexOf(current)
+  const ti = ordered.indexOf(target)
+  if (ci === ti || ci === -1 || ti === -1) return current
+  return ordered[ci + (ti > ci ? 1 : -1)]
 }
 
 const DEFAULT_ASSIGNMENT: CabinetAssignment = {
@@ -111,7 +148,6 @@ interface GameStore {
 }
 
 function makeAIPlayer(id: string, name: string, emoji: string, strategy: string): DemoPlayer {
-  // Slight variation in starting resources for AI
   const variation = () => 0.95 + Math.random() * 0.1
   const resources = {
     ...DEFAULT_PLAYER_RESOURCES,
@@ -119,6 +155,9 @@ function makeAIPlayer(id: string, name: string, emoji: string, strategy: string)
     population: DEFAULT_PLAYER_RESOURCES.population * variation(),
   }
   resources.gdpPerCapita = resources.gdp / resources.population
+
+  const personality = AI_PERSONALITIES[strategy]
+  const sp = personality?.startingPolicies
 
   return {
     id,
@@ -129,64 +168,143 @@ function makeAIPlayer(id: string, name: string, emoji: string, strategy: string)
     aiStrategy: strategy,
     policies: {
       ...DEFAULT_POLICIES,
-      cabinetAssignment: AI_STRATEGIES[strategy] || AI_STRATEGIES.balanced,
-      interestRate: 3.5 + Math.random() * 2,
+      cabinetAssignment: DEFAULT_ASSIGNMENT,
       cbrfAutopilot: true,
-      taxRate: 25 + Math.floor(Math.random() * 10),
-      immigrationPolicy: (['restrictive', 'moderate', 'open'] as const)[Math.floor(Math.random() * 3)],
-      capitalControls: (['open', 'moderate', 'strict'] as const)[Math.floor(Math.random() * 3)],
-      qeStance: (['tightening', 'neutral', 'easing'] as const)[Math.floor(Math.random() * 3)],
-      tariffRate: Math.floor(Math.random() * 15),
+      taxRate: sp?.taxRate ?? 28,
+      govSpendingEducation: sp?.edu ?? 4,
+      govSpendingHealthcare: sp?.health ?? 6,
+      govSpendingInfrastructure: sp?.infra ?? 5,
+      immigrationPolicy: sp?.immigration ?? 'moderate',
+      tariffRate: sp?.tariffRate ?? 5,
+      capitalControls: 'open',
+      qeStance: 'neutral',
     },
   }
 }
 
-function makeAIPolicies(player: DemoPlayer, quarter: number): PolicyChoices {
-  const base = AI_STRATEGIES[player.aiStrategy] || AI_STRATEGIES.balanced
-  // AI adjusts policies based on economic state
-  let interestRate = player.resources.interestRate
-  if (player.resources.inflation > 4) interestRate = Math.min(20, interestRate + 0.5)
-  else if (player.resources.inflation < 1) interestRate = Math.max(-1, interestRate - 0.5)
+function makeAIPolicies(player: DemoPlayer, _quarter: number, scoringWeights: ScoringWeights): PolicyChoices {
+  const r = player.resources
+  const p = player.policies
+  const personality = AI_PERSONALITIES[player.aiStrategy] || AI_PERSONALITIES.growth
 
-  // Occasional strategy shifts
-  const shift = Math.random()
-  let assignment = base
-  if (shift < 0.1 && quarter > 5) {
-    // 10% chance to shake things up
-    const strategies = Object.keys(AI_STRATEGIES)
-    const newStrat = strategies[Math.floor(Math.random() * strategies.length)]
-    assignment = AI_STRATEGIES[newStrat]
+  // --- Phase 1: Diagnose ---
+  const outputGap = (r.gdp - r.potentialGdp) / r.potentialGdp
+  const indices = { education: r.educationIndex, healthcare: r.healthcareIndex, infrastructure: r.infrastructureIndex }
+  const lowestIndex = (Object.keys(indices) as (keyof typeof indices)[])
+    .reduce((a, b) => indices[a] <= indices[b] ? a : b)
+
+  // --- Phase 2: Choose Macro Stance ---
+  let stance: MacroStance = 'GROW'
+  if (r.inflation > personality.stabilizeInflation || r.debtToGdp > personality.stabilizeDebt) {
+    stance = 'STABILIZE'
+  } else if (r.exchangeRate < 0.8 || r.tradeBalance < personality.protectTradeBalance) {
+    stance = 'PROTECT'
+  } else if (outputGap < personality.stimulateOutputGap || r.unemployment > 7) {
+    stance = 'STIMULATE'
   }
 
-  // AI adjusts tariff rate based on trade balance
-  let tariffRate = player.policies.tariffRate
-  if (player.resources.tradeBalance < -2) tariffRate = Math.min(25, tariffRate + 2)
-  else if (player.resources.tradeBalance > 3) tariffRate = Math.max(0, tariffRate - 1)
+  // --- Phase 3: Set All Policies from Stance ---
 
-  // AI adjusts QE stance based on inflation/growth
-  let qeStance = player.policies.qeStance
-  if (player.resources.inflation > 5) qeStance = 'tightening'
-  else if (player.resources.inflation < 1 && player.resources.unemployment > 7) qeStance = 'easing'
-  else qeStance = 'neutral'
-
-  // AI adjusts capital controls based on exchange rate volatility
-  let capitalControls = player.policies.capitalControls
-  if (player.resources.exchangeRate < 0.8 || player.resources.exchangeRate > 1.3) {
-    capitalControls = 'strict'
-  } else if (player.resources.exchangeRate < 0.9 || player.resources.exchangeRate > 1.2) {
-    capitalControls = 'moderate'
-  } else {
-    capitalControls = 'open'
+  // Fiscal policy
+  const fiscalTargets: Record<MacroStance, { tax: number; total: number }> = {
+    STIMULATE: { tax: 23, total: 18 },
+    STABILIZE: { tax: 33, total: 12 },
+    PROTECT:   { tax: 28, total: 15 },
+    GROW:      { tax: 26, total: 16 },
   }
+  const ft = fiscalTargets[stance]
+  const taxRate = nudge(p.taxRate, ft.tax, 2)
+
+  // Spending allocation weighted toward lowest index + personality bias
+  const biasWeight: Record<string, Record<string, number>> = {
+    education:      { education: 3, healthcare: 1, infrastructure: 1 },
+    healthcare:     { education: 1, healthcare: 3, infrastructure: 1 },
+    infrastructure: { education: 1, healthcare: 1, infrastructure: 3 },
+  }
+  const lowestWeight: Record<string, number> = { education: 0, healthcare: 0, infrastructure: 0 }
+  lowestWeight[lowestIndex] = 2
+  const weights = {
+    education: (biasWeight[personality.spendingBias]?.education ?? 1) + lowestWeight.education,
+    healthcare: (biasWeight[personality.spendingBias]?.healthcare ?? 1) + lowestWeight.healthcare,
+    infrastructure: (biasWeight[personality.spendingBias]?.infrastructure ?? 1) + lowestWeight.infrastructure,
+  }
+  const totalWeight = weights.education + weights.healthcare + weights.infrastructure
+  const targetEdu = Math.round(ft.total * weights.education / totalWeight)
+  const targetHealth = Math.round(ft.total * weights.healthcare / totalWeight)
+  const targetInfra = ft.total - targetEdu - targetHealth
+
+  const govSpendingEducation = nudge(p.govSpendingEducation, targetEdu, 1)
+  const govSpendingHealthcare = nudge(p.govSpendingHealthcare, targetHealth, 1)
+  const govSpendingInfrastructure = nudge(p.govSpendingInfrastructure, targetInfra, 1)
+
+  // Debt guard-rail
+  const finalTax = r.debtToGdp > 110
+    ? Math.max(taxRate, govSpendingEducation + govSpendingHealthcare + govSpendingInfrastructure)
+    : taxRate
+
+  // Cabinet assignment
+  const cabinetFocus: Record<MacroStance, [number, number, number, number]> = {
+    STIMULATE: [1, 2, 4, 3],
+    STABILIZE: [2, 4, 2, 2],
+    PROTECT:   [3, 2, 2, 3],
+    GROW:      [2, 3, 3, 2],
+  }
+  const [wFocus, mFocus, eFocus, dFocus] = cabinetFocus[stance]
+
+  // Minister assignments
+  const engineerMap: Record<string, string> = {
+    education: 'education_reform',
+    healthcare: 'healthcare_system',
+    infrastructure: 'infrastructure',
+  }
+  const allAbove70 = r.educationIndex > 70 && r.healthcareIndex > 70 && r.infrastructureIndex > 70
+  const engineerAssignment = allAbove70 ? 'infrastructure' : (engineerMap[lowestIndex] || 'infrastructure')
+  const mageAssignment = mFocus >= 3 ? 'inflation_targeting' : 'interest_rate_control'
+  const diplomatAssignment = scoringWeights.populationGrowth >= 0.2 ? 'immigration_policy' : 'trade_negotiations'
+  const warriorAssignment = stance === 'PROTECT' ? 'currency_defense' : 'tariff_management'
+
+  const cabinetAssignment: CabinetAssignment = {
+    warrior:  { focus: wFocus, assignment: warriorAssignment },
+    mage:     { focus: mFocus, assignment: mageAssignment },
+    engineer: { focus: eFocus, assignment: engineerAssignment },
+    diplomat: { focus: dFocus, assignment: diplomatAssignment },
+  }
+
+  // Monetary / Trade / Migration
+  const stanceMon: Record<MacroStance, { qe: 'tightening' | 'neutral' | 'easing'; controls: 'open' | 'moderate' | 'strict'; imm: 'restrictive' | 'moderate' | 'open'; tariffTarget: number }> = {
+    STIMULATE: { qe: 'easing',     controls: 'open',     imm: 'open',        tariffTarget: 3 },
+    STABILIZE: { qe: 'tightening', controls: 'moderate', imm: 'moderate',    tariffTarget: 5 },
+    PROTECT:   { qe: 'neutral',    controls: 'strict',   imm: 'restrictive', tariffTarget: Math.min(25, p.tariffRate + 2) },
+    GROW:      { qe: 'neutral',    controls: 'open',     imm: 'open',        tariffTarget: 5 },
+  }
+  const sm = stanceMon[stance]
+
+  // Immigration: scoring-aware override for STIMULATE and GROW
+  let immTarget = sm.imm
+  if (stance === 'STIMULATE' || stance === 'GROW') {
+    if (scoringWeights.populationGrowth >= 0.3) immTarget = 'open'
+    else if (scoringWeights.populationGrowth >= 0.15) immTarget = 'moderate'
+    else immTarget = personality.immigrationBias
+  }
+  if (r.unemployment > 8) immTarget = 'restrictive'
+
+  const qeStance = stepCategorical(p.qeStance, sm.qe, ORDERED_QE)
+  const capitalControls = stepCategorical(p.capitalControls, sm.controls, ORDERED_CONTROLS)
+  const immigrationPolicy = stepCategorical(p.immigrationPolicy, immTarget, ORDERED_IMMIGRATION)
+  const tariffRate = nudge(p.tariffRate, sm.tariffTarget, 2)
 
   return {
-    ...player.policies,
-    cabinetAssignment: assignment,
-    interestRate,
+    ...p,
+    cabinetAssignment,
     cbrfAutopilot: true,
-    tariffRate,
+    taxRate: finalTax,
+    govSpendingEducation,
+    govSpendingHealthcare,
+    govSpendingInfrastructure,
+    immigrationPolicy,
     qeStance,
     capitalControls,
+    tariffRate,
   }
 }
 
@@ -251,7 +369,7 @@ export const useGameStore = create<GameStore>((set, get) => ({
     const inputs: ResolutionInput[] = allDemoPlayers.map((p) => ({
       playerId: p.id,
       resources: p.resources,
-      policies: p.id === 'player-1' ? state.policies : makeAIPolicies(p, currentQuarter),
+      policies: p.id === 'player-1' ? state.policies : makeAIPolicies(p, currentQuarter, state.scoringWeights),
       startingResources: DEFAULT_PLAYER_RESOURCES,
       quartersPlayed: currentQuarter,
     }))
