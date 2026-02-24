@@ -66,6 +66,10 @@ export function validatePolicies(policies: PolicyChoices): ValidationError[] {
     errors.push({ field: 'govSpendingInfrastructure', message: 'Infrastructure spending must be 0-10% of GDP' })
   }
 
+  if (policies.tariffRate < 0 || policies.tariffRate > 25) {
+    errors.push({ field: 'tariffRate', message: 'Tariff rate must be 0% to 25%' })
+  }
+
   // Validate cabinet assignment
   errors.push(...validateCabinetAssignment(policies.cabinetAssignment))
 

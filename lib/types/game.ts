@@ -4,6 +4,7 @@ export type GameStatus = 'waiting' | 'active' | 'resolving' | 'completed'
 export type QuarterStatus = 'active' | 'resolving' | 'completed'
 export type VisibilityMode = 'full' | 'blind' | 'partial'
 export type ResolutionMode = 'timer' | 'all_submit'
+export type EconomicModel = 'lagged' | 'equilibrium'
 
 export type ScoringPreset =
   | 'balanced_growth'
@@ -72,6 +73,9 @@ export interface PlayerResources {
   infrastructureIndex: number
   taxRate: number
   potentialGdp: number
+  tradeBalance: number
+  moneySupplyIndex: number
+  qualityOfLife: number
 }
 
 export interface Quarter {
@@ -159,6 +163,9 @@ export const DEFAULT_PLAYER_RESOURCES: PlayerResources = {
   infrastructureIndex: 50,
   taxRate: 28,
   potentialGdp: 2_000_000_000_000,
+  tradeBalance: 0,
+  moneySupplyIndex: 100,
+  qualityOfLife: 0.5,
 }
 
 export interface PolicyChoices {
@@ -173,4 +180,5 @@ export interface PolicyChoices {
   qeStance: 'tightening' | 'neutral' | 'easing'
   tariffs: Record<string, number>
   capitalControls: 'open' | 'moderate' | 'strict'
+  tariffRate: number
 }

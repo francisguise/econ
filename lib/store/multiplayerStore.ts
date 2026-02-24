@@ -30,6 +30,7 @@ const DEFAULT_POLICIES: PolicyChoices = {
   qeStance: 'neutral',
   tariffs: {},
   capitalControls: 'open',
+  tariffRate: 0,
 }
 
 interface Notification {

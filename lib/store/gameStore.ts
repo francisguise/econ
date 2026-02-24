@@ -61,6 +61,7 @@ const DEFAULT_POLICIES: PolicyChoices = {
   qeStance: 'neutral',
   tariffs: {},
   capitalControls: 'open',
+  tariffRate: 0,
 }
 
 interface Notification {
@@ -133,6 +134,9 @@ function makeAIPlayer(id: string, name: string, emoji: string, strategy: string)
       cbrfAutopilot: true,
       taxRate: 25 + Math.floor(Math.random() * 10),
       immigrationPolicy: (['restrictive', 'moderate', 'open'] as const)[Math.floor(Math.random() * 3)],
+      capitalControls: (['open', 'moderate', 'strict'] as const)[Math.floor(Math.random() * 3)],
+      qeStance: (['tightening', 'neutral', 'easing'] as const)[Math.floor(Math.random() * 3)],
+      tariffRate: Math.floor(Math.random() * 15),
     },
   }
 }
@@ -154,11 +158,35 @@ function makeAIPolicies(player: DemoPlayer, quarter: number): PolicyChoices {
     assignment = AI_STRATEGIES[newStrat]
   }
 
+  // AI adjusts tariff rate based on trade balance
+  let tariffRate = player.policies.tariffRate
+  if (player.resources.tradeBalance < -2) tariffRate = Math.min(25, tariffRate + 2)
+  else if (player.resources.tradeBalance > 3) tariffRate = Math.max(0, tariffRate - 1)
+
+  // AI adjusts QE stance based on inflation/growth
+  let qeStance = player.policies.qeStance
+  if (player.resources.inflation > 5) qeStance = 'tightening'
+  else if (player.resources.inflation < 1 && player.resources.unemployment > 7) qeStance = 'easing'
+  else qeStance = 'neutral'
+
+  // AI adjusts capital controls based on exchange rate volatility
+  let capitalControls = player.policies.capitalControls
+  if (player.resources.exchangeRate < 0.8 || player.resources.exchangeRate > 1.3) {
+    capitalControls = 'strict'
+  } else if (player.resources.exchangeRate < 0.9 || player.resources.exchangeRate > 1.2) {
+    capitalControls = 'moderate'
+  } else {
+    capitalControls = 'open'
+  }
+
   return {
     ...player.policies,
     cabinetAssignment: assignment,
     interestRate,
     cbrfAutopilot: true,
+    tariffRate,
+    qeStance,
+    capitalControls,
   }
 }
 
