@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/auth-helpers'
 import { SCORING_PRESETS, DEFAULT_PLAYER_RESOURCES, ScoringPreset } from '@/lib/types/game'
 
 export const dynamic = 'force-dynamic'
@@ -29,10 +30,11 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const userId = request.headers.get('x-player-id')
-  if (!userId) {
-    return NextResponse.json({ error: 'Missing player ID' }, { status: 401 })
+  const user = await getAuthUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
+  const userId = user.id
 
   const body = await request.json()
   const {

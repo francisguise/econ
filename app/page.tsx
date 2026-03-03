@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { usePlayerId } from '@/lib/hooks/usePlayerId'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { Panel } from '@/components/tui/Panel'
 import { MapView } from '@/components/tui/MapView'
 import { CabinetPanel } from '@/components/tui/CabinetPanel'
@@ -61,8 +61,15 @@ export default function HomePage() {
 }
 
 function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => void }) {
-  const { playerId } = usePlayerId()
+  const { userId } = useAuth()
   const router = useRouter()
+
+  async function handleSignOut() {
+    const { createBrowserSupabase } = await import('@/lib/supabase/client')
+    const supabase = createBrowserSupabase()
+    await supabase.auth.signOut()
+    router.push('/login')
+  }
 
   return (
     <div className="space-y-4">
@@ -80,11 +87,17 @@ function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => v
           >
             {boxChars.play} Create Multiplayer Game
           </button>
+          <button
+            onClick={handleSignOut}
+            className="block w-full text-left px-4 py-2 text-terminal-red hover:bg-terminal-bright-black transition-colors font-bold"
+          >
+            Sign Out
+          </button>
         </div>
       </Panel>
 
       <GameList
-        userId={playerId}
+        userId={userId}
         onJoin={(gameId) => router.push(`/game/${gameId}?join=true`)}
         onResume={(gameId) => router.push(`/game/${gameId}`)}
       />
@@ -174,7 +187,6 @@ function LobbyView({ onDemo, onCreate }: { onDemo: () => void; onCreate: () => v
 }
 
 function CreateGameView({ onBack }: { onBack: () => void }) {
-  const { playerId } = usePlayerId()
   const router = useRouter()
   const [name, setName] = useState('')
   const [playerName, setPlayerName] = useState('')
@@ -199,7 +211,7 @@ function CreateGameView({ onBack }: { onBack: () => void }) {
     try {
       const res = await fetch('/api/games', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-player-id': playerId! },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
           playerName: playerName.trim(),

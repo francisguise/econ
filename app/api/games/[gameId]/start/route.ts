@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createServiceClient } from '@/lib/supabase/server'
+import { getAuthUser } from '@/lib/supabase/auth-helpers'
 
 export async function POST(
   request: Request,
   { params }: { params: { gameId: string } }
 ) {
-  const userId = request.headers.get('x-player-id')
-  if (!userId) {
-    return NextResponse.json({ error: 'Missing player ID' }, { status: 401 })
+  const user = await getAuthUser()
+  if (!user) {
+    return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
   }
+  const userId = user.id
 
   const supabase = createServiceClient()
 

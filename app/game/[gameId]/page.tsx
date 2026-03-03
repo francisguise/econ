@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { usePlayerId } from '@/lib/hooks/usePlayerId'
+import { useAuth } from '@/lib/hooks/useAuth'
 import { useMultiplayerGame } from '@/lib/hooks/useMultiplayerGame'
 import { useMultiplayerStore } from '@/lib/store/multiplayerStore'
 import { useKeyboard } from '@/lib/hooks/useKeyboard'
@@ -24,14 +24,14 @@ import { DEFAULT_PLAYER_RESOURCES, AVAILABLE_PLAYER_EMOJIS } from '@/lib/types/g
 import { boxChars } from '@/lib/assets/box-chars'
 
 export default function GamePage({ params }: { params: { gameId: string } }) {
-  const { playerId, isLoaded } = usePlayerId()
+  const { userId, isLoaded } = useAuth()
   const searchParams = useSearchParams()
 
-  if (!isLoaded || !playerId) {
+  if (!isLoaded || !userId) {
     return <LoadingScreen message="Loading..." />
   }
 
-  return <GameContent gameId={params.gameId} userId={playerId} showJoin={searchParams.get('join') === 'true'} />
+  return <GameContent gameId={params.gameId} userId={userId} showJoin={searchParams.get('join') === 'true'} />
 }
 
 function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: string; showJoin: boolean }) {
@@ -90,7 +90,6 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
       <JoinGameForm
         gameId={gameId}
         gameName={game.name}
-        playerId={userId}
         onJoined={() => { setShowJoinForm(false); setJoinedSuccessfully(true); refetch() }}
         onCancel={() => router.push('/')}
       />
@@ -163,13 +162,11 @@ function GameContent({ gameId, userId, showJoin }: { gameId: string; userId: str
 function JoinGameForm({
   gameId,
   gameName,
-  playerId,
   onJoined,
   onCancel,
 }: {
   gameId: string
   gameName: string
-  playerId: string
   onJoined: () => void
   onCancel: () => void
 }) {
@@ -190,7 +187,7 @@ function JoinGameForm({
     try {
       const res = await fetch(`/api/games/${gameId}/join`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-player-id': playerId },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ playerName: playerName.trim(), playerEmoji }),
       })
 

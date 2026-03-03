@@ -229,7 +229,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     try {
       const res = await fetch(`/api/games/${gameId}/submit`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'x-player-id': userId },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ policies: store.policies }),
       })
 
@@ -254,7 +254,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
       useMultiplayerStore.getState().addNotification('mage', 'Network error submitting policies', 'error')
       return false
     }
-  }, [gameId, userId])
+  }, [gameId])
 
   // Start game
   const startGame = useCallback(async () => {
@@ -262,7 +262,6 @@ export function useMultiplayerGame(gameId: string, userId: string) {
     try {
       const res = await fetch(`/api/games/${gameId}/start`, {
         method: 'POST',
-        headers: { 'x-player-id': userId },
       })
 
       if (!res.ok) {
@@ -277,7 +276,7 @@ export function useMultiplayerGame(gameId: string, userId: string) {
       useMultiplayerStore.getState().addNotification('warrior', 'Network error starting game', 'error')
       return false
     }
-  }, [gameId, userId])
+  }, [gameId])
 
   return {
     submitPolicies,
