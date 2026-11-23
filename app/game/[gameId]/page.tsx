@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams, useParams } from 'next/navigation'
 import { useAuth } from '@/lib/hooks/useAuth'
 import { useMultiplayerGame } from '@/lib/hooks/useMultiplayerGame'
 import { useMultiplayerStore } from '@/lib/store/multiplayerStore'
@@ -23,7 +23,8 @@ import { MinisterRole } from '@/lib/types/cabinet'
 import { DEFAULT_PLAYER_RESOURCES, AVAILABLE_PLAYER_EMOJIS } from '@/lib/types/game'
 import { boxChars } from '@/lib/assets/box-chars'
 
-export default function GamePage({ params }: { params: { gameId: string } }) {
+export default function GamePage() {
+  const params = useParams<{ gameId: string }>();
   const { userId, isLoaded } = useAuth()
   const searchParams = useSearchParams()
 

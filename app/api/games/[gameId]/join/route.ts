@@ -5,8 +5,9 @@ import { DEFAULT_PLAYER_RESOURCES } from '@/lib/types/game'
 
 export async function POST(
   request: Request,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
+  const { gameId } = await params;
   const user = await getAuthUser()
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -25,7 +26,7 @@ export async function POST(
   const { data: game } = await supabase
     .from('games')
     .select('*, game_players(id)')
-    .eq('id', params.gameId)
+    .eq('id', gameId)
     .single()
 
   if (!game) {
@@ -44,7 +45,7 @@ export async function POST(
   const { data: existing } = await supabase
     .from('game_players')
     .select('id')
-    .eq('game_id', params.gameId)
+    .eq('game_id', gameId)
     .eq('user_id', userId)
     .single()
 
@@ -56,7 +57,7 @@ export async function POST(
   const { data: player, error } = await supabase
     .from('game_players')
     .insert({
-      game_id: params.gameId,
+      game_id: gameId,
       user_id: userId,
       player_name: playerName,
       player_emoji: playerEmoji,
@@ -74,7 +75,7 @@ export async function POST(
   await supabase
     .from('cabinets')
     .insert({
-      game_id: params.gameId,
+      game_id: gameId,
       player_id: userId,
     })
 
