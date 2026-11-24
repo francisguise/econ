@@ -1,8 +1,8 @@
 import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 
-function createAuthClient() {
-  const cookieStore = cookies()
+async function createAuthClient() {
+  const cookieStore = await cookies()
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,7 +27,7 @@ function createAuthClient() {
 }
 
 export async function getAuthUser() {
-  const supabase = createAuthClient()
+  const supabase = await createAuthClient()
   const { data: { user } } = await supabase.auth.getUser()
   return user
 }
