@@ -6,8 +6,9 @@ import { executeQuarterResolution } from '@/lib/game-logic/resolveQuarter'
 
 export async function POST(
   request: Request,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
+  const { gameId } = await params;
   const user = await getAuthUser()
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -32,7 +33,7 @@ export async function POST(
   const { data: gameData } = await supabase
     .from('games')
     .select('resolution_mode')
-    .eq('id', params.gameId)
+    .eq('id', gameId)
     .single()
 
   const resolutionMode = gameData?.resolution_mode || 'timer'
@@ -41,7 +42,7 @@ export async function POST(
   const { data: player } = await supabase
     .from('game_players')
     .select('id')
-    .eq('game_id', params.gameId)
+    .eq('game_id', gameId)
     .eq('user_id', userId)
     .single()
 
@@ -53,7 +54,7 @@ export async function POST(
   const { data: quarter } = await supabase
     .from('quarters')
     .select('id')
-    .eq('game_id', params.gameId)
+    .eq('game_id', gameId)
     .eq('status', 'active')
     .single()
 
@@ -81,7 +82,7 @@ export async function POST(
     .upsert(
       {
         quarter_id: quarter.id,
-        game_id: params.gameId,
+        game_id: gameId,
         player_id: userId,
         policies,
         submitted_at: new Date().toISOString(),
@@ -105,7 +106,7 @@ export async function POST(
   const { data: allPlayers } = await supabase
     .from('game_players')
     .select('id')
-    .eq('game_id', params.gameId)
+    .eq('game_id', gameId)
     .eq('is_active', true)
 
   const { data: allSubmissions } = await supabase
@@ -120,7 +121,7 @@ export async function POST(
   if (allSubmitted) {
     let resolutionError = false
     try {
-      const resolveResult = await executeQuarterResolution(quarter.id, params.gameId)
+      const resolveResult = await executeQuarterResolution(quarter.id, gameId)
       if (!resolveResult.success) {
         resolutionError = true
       }

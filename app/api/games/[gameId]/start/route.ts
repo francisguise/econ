@@ -4,8 +4,9 @@ import { getAuthUser } from '@/lib/supabase/auth-helpers'
 
 export async function POST(
   request: Request,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
+  const { gameId } = await params;
   const user = await getAuthUser()
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
@@ -18,7 +19,7 @@ export async function POST(
   const { data: game } = await supabase
     .from('games')
     .select('*, game_players(id)')
-    .eq('id', params.gameId)
+    .eq('id', gameId)
     .single()
 
   if (!game) {
@@ -44,7 +45,7 @@ export async function POST(
   const { error: quarterError } = await supabase
     .from('quarters')
     .insert({
-      game_id: params.gameId,
+      game_id: gameId,
       quarter_number: 1,
       starts_at: now.toISOString(),
       ends_at: endsAt.toISOString(),
@@ -59,7 +60,7 @@ export async function POST(
   const { error: gameError } = await supabase
     .from('games')
     .update({ status: 'active', current_quarter: 1 })
-    .eq('id', params.gameId)
+    .eq('id', gameId)
 
   if (gameError) {
     return NextResponse.json({ error: gameError.message }, { status: 500 })

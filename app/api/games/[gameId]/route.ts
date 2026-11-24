@@ -5,15 +5,16 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(
   _request: Request,
-  { params }: { params: { gameId: string } }
+  { params }: { params: Promise<{ gameId: string }> }
 ) {
+  const { gameId } = await params;
   const supabase = createServiceClient()
 
   // Fetch game with players in a single joined query (matches game list pattern)
   const { data: gameWithPlayers, error: gameError } = await supabase
     .from('games')
     .select('*, game_players(*)')
-    .eq('id', params.gameId)
+    .eq('id', gameId)
     .single()
 
   if (gameError || !gameWithPlayers) {
@@ -27,7 +28,7 @@ export async function GET(
   const { data: currentQuarter } = await supabase
     .from('quarters')
     .select('*')
-    .eq('game_id', params.gameId)
+    .eq('game_id', gameId)
     .eq('status', 'active')
     .single()
 
@@ -46,7 +47,7 @@ export async function GET(
   const { data: snapshots } = await supabase
     .from('quarter_snapshots')
     .select('*')
-    .eq('game_id', params.gameId)
+    .eq('game_id', gameId)
     .order('created_at', { ascending: true })
 
   return NextResponse.json({
